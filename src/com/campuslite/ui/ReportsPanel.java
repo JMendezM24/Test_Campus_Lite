@@ -1,6 +1,6 @@
 package com.campuslite.ui;
 
-import com.campuslite.domain.Course;
+import com.campuslite.domain.Enrollment;
 import com.campuslite.domain.Student;
 import com.campuslite.logic.EnrollmentManager;
 import com.campuslite.logic.StudentManager;
@@ -167,42 +167,50 @@ public class ReportsPanel extends JPanel {
         /**
          * Cursos inscritos del estudiante.
          */
-        for (Course course :
-                enrollmentManager
-                        .getCoursesByStudent(student)) {
+        for (Enrollment enrollment :
+            enrollmentManager
+                    .getEnrollments()) {
 
-            double average =
-                    course.calculateCourseAverage();
+        if (!enrollment.getStudent()
+                .getStudentCode()
+                .equals(
+                        student.getStudentCode()
+                )) {
 
-            String status =
-                    average >= 61
-                            ? "Aprobado"
-                            : "Reprobado";
-
-            totalAverage += average;
-
-            totalCourses++;
-
-            model.addRow(
-            		new Object[]{
-            		        student.getStudentCode()
-            		                + "-"
-            		                + java.time.LocalDate.now()
-            		                        .getYear()
-            		                + "-"
-            		                + course.getCourseCode(),
-
-            		        course.getName(),
-
-            		        String.format(
-            		                "%.2f",
-            		                average
-            		        ),
-
-            		        status
-            		}
-            );
+            continue;
         }
+
+        double average =
+                enrollment.calculateAverage();
+
+        String status =
+                average >= 61
+                        ? "Aprobado"
+                        : "Reprobado";
+
+        totalAverage += average;
+
+        totalCourses++;
+
+        model.addRow(
+                new Object[]{
+
+                        enrollment
+                                .getEnrollmentCode(),
+
+                        enrollment
+                                .getCourse()
+                                .getName(),
+
+                        String.format(
+                                "%.2f",
+                                average
+                        ),
+
+                        status
+                }
+        );
+    }
 
         /**
          * Promedio general.

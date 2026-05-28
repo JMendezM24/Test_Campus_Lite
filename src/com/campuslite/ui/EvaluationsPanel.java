@@ -1,8 +1,7 @@
 package com.campuslite.ui;
 
 import com.campuslite.domain.*;
-import com.campuslite.logic.CourseManager;
-import com.campuslite.logic.EvaluationManager;
+import com.campuslite.logic.EnrollmentManager;
 import com.campuslite.logic.ValidationUtils;
 import com.campuslite.persistence.EvaluationCSVRepository;
 
@@ -15,657 +14,408 @@ import java.awt.*;
  */
 public class EvaluationsPanel extends JPanel {
 
-    private final CourseManager courseManager;
-
-    private final EvaluationManager evaluationManager;
-
+    private final EnrollmentManager enrollmentManager;
     private final EvaluationCSVRepository repository;
 
-    /**
-     * Componentes UI.
-     */
+    // 🔥 NUEVO: selección separada
+    private JComboBox<Student> cmbStudents;
     private JComboBox<Course> cmbCourses;
 
     private JComboBox<String> cmbType;
 
     private JTextField txtName;
-
     private JTextField txtScore;
-
     private JTextField txtPercentage;
 
     private ModernTable table;
-
     private DefaultTableModel model;
 
-    public EvaluationsPanel(CourseManager courseManager) {
+    public EvaluationsPanel(EnrollmentManager enrollmentManager) {
 
-        this.courseManager = courseManager;
-
-        evaluationManager = new EvaluationManager();
-
-        repository = new EvaluationCSVRepository();
+        this.enrollmentManager = enrollmentManager;
+        this.repository = new EvaluationCSVRepository();
 
         initialize();
-
-        loadCourses();
-
+        loadData();
         refreshTable();
     }
 
-    /**
-     * Inicializa interfaz.
-     */
+    // =========================
+    // INIT UI
+    // =========================
     private void initialize() {
 
         setLayout(new BorderLayout());
-
         setBackground(UIStyles.BACKGROUND_COLOR);
-
         setBorder(UIStyles.createPadding());
 
-        /**
-         * =========================
-         * PANEL SUPERIOR
-         * =========================
-         */
-        JPanel topPanel = new JPanel();
+        JPanel topPanel = new JPanel(new GridBagLayout());
+        topPanel.setBackground(UIStyles.BACKGROUND_COLOR);
 
-        topPanel.setLayout(new GridBagLayout());
-
-        topPanel.setBackground(
-                UIStyles.BACKGROUND_COLOR
-        );
-
-        GridBagConstraints gbc =
-                new GridBagConstraints();
-
+        GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(8, 8, 8, 8);
-
         gbc.fill = GridBagConstraints.HORIZONTAL;
-
         gbc.weightx = 1;
 
-        /**
-         * Campos.
-         */
+        // =========================
+        // COMPONENTES
+        // =========================
+        cmbStudents = new JComboBox<>();
         cmbCourses = new JComboBox<>();
 
         cmbType = new JComboBox<>();
-
         cmbType.addItem("Examen");
-
         cmbType.addItem("Laboratorio");
-
         cmbType.addItem("Proyecto");
 
         txtName = new JTextField(15);
-
         txtScore = new JTextField(15);
-
         txtPercentage = new JTextField(15);
 
-        /**
-         * =========================
-         * FILA 1 LABELS
-         * =========================
-         */
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        topPanel.add(new JLabel("Curso"), gbc);
+        // =========================
+        // LABELS
+        // =========================
+        gbc.gridx = 0; gbc.gridy = 0;
+        topPanel.add(new JLabel("Estudiante"), gbc);
 
         gbc.gridx = 1;
-        topPanel.add(new JLabel("Tipo"), gbc);
+        topPanel.add(new JLabel("Curso"), gbc);
 
         gbc.gridx = 2;
-        topPanel.add(new JLabel("Nombre"), gbc);
+        topPanel.add(new JLabel("Tipo"), gbc);
 
         gbc.gridx = 3;
-        topPanel.add(new JLabel("Nota"), gbc);
+        topPanel.add(new JLabel("Nombre"), gbc);
 
         gbc.gridx = 4;
+        topPanel.add(new JLabel("Nota"), gbc);
+
+        gbc.gridx = 5;
         topPanel.add(new JLabel("Porcentaje"), gbc);
 
-        /**
-         * =========================
-         * FILA 2 CAMPOS
-         * =========================
-         */
+        // =========================
+        // CAMPOS
+        // =========================
         gbc.gridy = 1;
 
         gbc.gridx = 0;
-        topPanel.add(cmbCourses, gbc);
+        topPanel.add(cmbStudents, gbc);
 
         gbc.gridx = 1;
-        topPanel.add(cmbType, gbc);
+        topPanel.add(cmbCourses, gbc);
 
         gbc.gridx = 2;
-        topPanel.add(txtName, gbc);
+        topPanel.add(cmbType, gbc);
 
         gbc.gridx = 3;
-        topPanel.add(txtScore, gbc);
+        topPanel.add(txtName, gbc);
 
         gbc.gridx = 4;
+        topPanel.add(txtScore, gbc);
+
+        gbc.gridx = 5;
         topPanel.add(txtPercentage, gbc);
 
-        /**
-         * =========================
-         * PANEL BOTONES
-         * =========================
-         */
+        // =========================
+        // BOTONES
+        // =========================
         JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(UIStyles.BACKGROUND_COLOR);
 
-        buttonPanel.setBackground(
-                UIStyles.BACKGROUND_COLOR
-        );
-
-        ModernButton btnAdd =
-                new ModernButton("Agregar");
-
-        ModernButton btnDelete =
-                new ModernButton("Eliminar");
-        
-        ModernButton btnUpdate =
-                new ModernButton("Actualizar");
+        ModernButton btnAdd = new ModernButton("➕ Agregar");
+        ModernButton btnUpdate = new ModernButton("🔄 Actualizar");
+        ModernButton btnDelete = new ModernButton("❌ Eliminar");
 
         buttonPanel.add(btnAdd);
-        
         buttonPanel.add(btnUpdate);
-
         buttonPanel.add(btnDelete);
 
-        /**
-         * =========================
-         * FILA 3 BOTONES
-         * =========================
-         */
         gbc.gridx = 0;
-
         gbc.gridy = 2;
-
-        gbc.gridwidth = 5;
-
+        gbc.gridwidth = 6;
         gbc.anchor = GridBagConstraints.CENTER;
 
         topPanel.add(buttonPanel, gbc);
 
-        /**
-         * =========================
-         * TABLA
-         * =========================
-         */
+        // =========================
+        // TABLA
+        // =========================
         model = new DefaultTableModel();
-
-        model.setColumnIdentifiers(
-                new Object[]{
-                        "Curso",
-                        "Tipo",
-                        "Nombre",
-                        "Nota",
-                        "Porcentaje"
-                }
-        );
+        model.setColumnIdentifiers(new Object[]{
+                "Inscripción",
+                "Tipo",
+                "Nombre",
+                "Nota",
+                "Porcentaje"
+        });
 
         table = new ModernTable(model);
 
-        JScrollPane scrollPane =
-                new JScrollPane(table);
+        JScrollPane scrollPane = new JScrollPane(table);
 
-        /**
-         * =========================
-         * EVENTOS
-         * =========================
-         */
+        // =========================
+        // EVENTS
+        // =========================
+        btnAdd.addActionListener(e -> addEvaluation());
+        btnUpdate.addActionListener(e -> updateEvaluation());
+        btnDelete.addActionListener(e -> deleteEvaluation());
 
-        /**
-         * Evento agregar.
-         */
-        btnAdd.addActionListener(
-                e -> addEvaluation()
-        );
+        cmbStudents.addActionListener(e -> refreshTable());
+        cmbCourses.addActionListener(e -> refreshTable());
 
-        /**
-         * Evento eliminar.
-         */
-        btnDelete.addActionListener(
-                e -> deleteEvaluation()
-        );
-        
-        btnUpdate.addActionListener(
-                e -> updateEvaluation()
-        );
-        table.getSelectionModel()
-        .addListSelectionListener(
-                e -> loadSelectedEvaluation()
-        );
-
-        /**
-         * Refresca tabla al cambiar curso.
-         */
-        cmbCourses.addActionListener(
-                e -> refreshTable()
-        );
+        table.getSelectionModel().addListSelectionListener(e -> loadSelectedEvaluation());
 
         add(topPanel, BorderLayout.NORTH);
-
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    /**
-     * Agrega evaluación.
-     */
+    // =========================
+    // ADD
+    // =========================
     private void addEvaluation() {
 
         try {
 
-            Course course =
-                    (Course) cmbCourses.getSelectedItem();
+            Enrollment enrollment = getSelectedEnrollment();
 
-            if (course == null) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Debe existir al menos un curso."
-                );
-
+            if (enrollment == null) {
+                JOptionPane.showMessageDialog(this, "Seleccione estudiante y curso.");
                 return;
             }
 
             String name = txtName.getText();
+            String scoreText = txtScore.getText();
+            String percentageText = txtPercentage.getText();
 
-            String scoreText =
-                    txtScore.getText();
+            validateFields(name, scoreText, percentageText);
 
-            String percentageText =
-                    txtPercentage.getText();
-
-            validateFields(
+            Evaluation evaluation = createEvaluation(
+                    cmbType.getSelectedItem().toString(),
                     name,
-                    scoreText,
-                    percentageText
+                    Double.parseDouble(scoreText),
+                    Double.parseDouble(percentageText)
             );
 
-            double score =
-                    Double.parseDouble(scoreText);
-
-            double percentage =
-                    Double.parseDouble(
-                            percentageText
-                    );
-
-            String type =
-                    cmbType.getSelectedItem()
-                            .toString();
-
-            Evaluation evaluation =
-                    createEvaluation(
-                            type,
-                            name,
-                            score,
-                            percentage
-                    );
-
-            evaluationManager.addEvaluationToCourse(
-                    course,
-                    evaluation
-            );
-
+            enrollment.validatePercentage(evaluation);
+            enrollment.addEvaluation(evaluation);
             repository.saveEvaluations(
-                    courseManager.getCourses()
+                    enrollmentManager.getEnrollments()
             );
 
             refreshTable();
-
             clearFields();
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Evaluación agregada correctamente."
-            );
-
         } catch (Exception ex) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, ex.getMessage());
         }
     }
-    /**
-     * Actualiza evaluación.
-     */
+
+    // =========================
+    // UPDATE
+    // =========================
     private void updateEvaluation() {
 
         int row = table.getSelectedRow();
 
         if (row == -1) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Seleccione una evaluación."
-            );
-
+            JOptionPane.showMessageDialog(this, "Seleccione una evaluación.");
             return;
         }
 
         try {
 
-            Course course =
-                    (Course) cmbCourses
-                            .getSelectedItem();
+            Enrollment enrollment = getSelectedEnrollment();
 
-            if (course == null) {
-                return;
-            }
+            Evaluation old = enrollment.getEvaluations().get(row);
 
-            Evaluation oldEvaluation =
-                    course.getEvaluations()
-                            .get(row);
-
-            course.getEvaluations().remove(
-                    oldEvaluation
+            Evaluation updated = createEvaluation(
+                    cmbType.getSelectedItem().toString(),
+                    txtName.getText(),
+                    Double.parseDouble(txtScore.getText()),
+                    Double.parseDouble(txtPercentage.getText())
             );
 
-            /**
-             * Nueva evaluación.
-             */
-            Evaluation updatedEvaluation =
-                    createEvaluation(
-                            cmbType.getSelectedItem()
-                                    .toString(),
-                            txtName.getText(),
-                            Double.parseDouble(
-                                    txtScore.getText()
-                            ),
-                            Double.parseDouble(
-                                    txtPercentage.getText()
-                            )
-                    );
-
-            course.addEvaluation(
-                    updatedEvaluation
-            );
-
-            /**
-             * Guarda CSV.
-             */
+            enrollment.removeEvaluation(old);
+            enrollment.validatePercentage(updated);
+            enrollment.addEvaluation(updated);
             repository.saveEvaluations(
-                    courseManager.getCourses()
+                    enrollmentManager.getEnrollments()
             );
 
             refreshTable();
-
             clearFields();
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Evaluación actualizada."
-            );
-
         } catch (Exception ex) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, ex.getMessage());
         }
     }
 
-    /**
-     * Elimina evaluación.
-     */
+    // =========================
+    // DELETE
+    // =========================
     private void deleteEvaluation() {
 
         int row = table.getSelectedRow();
 
-        if (row == -1) {
+        if (row == -1) return;
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Seleccione una evaluación."
-            );
+        Enrollment enrollment = getSelectedEnrollment();
 
-            return;
-        }
+        Evaluation eval = enrollment.getEvaluations().get(row);
 
-        Course course =
-                (Course) cmbCourses.getSelectedItem();
-
-        if (course == null) {
-            return;
-        }
-
-        Evaluation evaluation =
-                course.getEvaluations().get(row);
-
-        evaluationManager.removeEvaluation(
-                course,
-                evaluation
-        );
-
+        enrollment.removeEvaluation(eval);
         repository.saveEvaluations(
-                courseManager.getCourses()
+                enrollmentManager.getEnrollments()
         );
 
         refreshTable();
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Evaluación eliminada."
-        );
     }
 
-    /**
-     * Refresca tabla.
-     */
+    // =========================
+    // TABLE
+    // =========================
     private void refreshTable() {
 
         model.setRowCount(0);
 
-        Course selectedCourse =
-                (Course) cmbCourses.getSelectedItem();
+        Enrollment enrollment = getSelectedEnrollment();
 
-        if (selectedCourse == null) {
-            return;
+        if (enrollment == null) return;
+
+        for (Evaluation e : enrollment.getEvaluations()) {
+
+            model.addRow(new Object[]{
+                    enrollment.getEnrollmentCode(),
+                    e.getTypeName(),
+                    e.getEvaluationName(),
+                    e.getScore(),
+                    e.getPercentage()
+            });
         }
 
-        /**
-         * Mostrar TODAS las evaluaciones
-         * del curso seleccionado.
-         */
-        for (Evaluation evaluation :
-                selectedCourse.getEvaluations()) {
-
-            model.addRow(
-                    new Object[]{
-                            selectedCourse.getCourseCode(),
-                            evaluation.getTypeName(),
-                            evaluation.getEvaluationName(),
-                            evaluation.getScore(),
-                            evaluation.getPercentage()
-                    }
-            );
-        }
-
-        /**
-         * Fuerza refresco visual.
-         */
         model.fireTableDataChanged();
     }
 
-    /**
-     * Crea evaluación según tipo.
-     */
-    private Evaluation createEvaluation(String type,
-                                        String name,
-                                        double score,
-                                        double percentage) {
+    // =========================
+    // HELPERS
+    // =========================
+    private Enrollment getSelectedEnrollment() {
 
-        switch (type) {
+        Student s = (Student) cmbStudents.getSelectedItem();
+        Course c = (Course) cmbCourses.getSelectedItem();
 
-            case "Examen":
+        if (s == null || c == null) return null;
 
-                return new WrittenExam(
-                        name,
-                        score,
-                        percentage
-                );
-
-            case "Laboratorio":
-
-                return new Laboratory(
-                        name,
-                        score,
-                        percentage
-                );
-
-            case "Proyecto":
-
-                return new ProjectEvaluation(
-                        name,
-                        score,
-                        percentage
-                );
-
-            default:
-                return null;
-        }
-    }
-    /**
-     * Carga evaluación seleccionada.
-     */
-    private void loadSelectedEvaluation() {
-
-        int row = table.getSelectedRow();
-
-        if (row == -1) {
-            return;
-        }
-
-        txtName.setText(
-                model.getValueAt(row, 2)
-                        .toString()
-        );
-
-        txtScore.setText(
-                model.getValueAt(row, 3)
-                        .toString()
-        );
-
-        txtPercentage.setText(
-                model.getValueAt(row, 4)
-                        .toString()
-        );
-
-        cmbType.setSelectedItem(
-                model.getValueAt(row, 1)
-                        .toString()
-        );
+        return enrollmentManager.findEnrollment(s, c);
     }
 
-    /**
-     * Valida campos.
-     */
-    private void validateFields(String name,
-                                String score,
-                                String percentage) {
+    private void loadData() {
 
-        if (ValidationUtils.isEmpty(name)
-                || ValidationUtils.isEmpty(score)
-                || ValidationUtils.isEmpty(percentage)) {
-
-            throw new IllegalArgumentException(
-                    "Todos los campos son obligatorios."
-            );
-        }
-
-        if (!ValidationUtils.isDouble(score)) {
-
-            throw new IllegalArgumentException(
-                    "La nota debe ser numérica."
-            );
-        }
-
-        if (!ValidationUtils.isDouble(percentage)) {
-
-            throw new IllegalArgumentException(
-                    "El porcentaje debe ser numérico."
-            );
-        }
-    }
-
-    /**
-     * Limpia campos.
-     */
-    private void clearFields() {
-
-        txtName.setText("");
-
-        txtScore.setText("");
-
-        txtPercentage.setText("");
-    }
-
-    /**
-     * Carga cursos en combo.
-     */
-    /**
-     * Carga cursos en combo.
-     */
-    private void loadCourses() {
-
-        Course previousSelection =
-                (Course) cmbCourses.getSelectedItem();
-
+        cmbStudents.removeAllItems();
         cmbCourses.removeAllItems();
 
-        for (Course course :
-                courseManager.getCourses()) {
+        for (Enrollment enrollment :
+                enrollmentManager.getEnrollments()) {
 
-            cmbCourses.addItem(course);
-        }
+            Student student =
+                    enrollment.getStudent();
 
-        /**
-         * Mantiene selección anterior.
-         */
-        if (previousSelection != null) {
+            Course course =
+                    enrollment.getCourse();
+
+            boolean studentExists = false;
+
+            for (int i = 0;
+                 i < cmbStudents.getItemCount();
+                 i++) {
+
+                if (cmbStudents.getItemAt(i)
+                        .getStudentCode()
+                        .equals(student.getStudentCode())) {
+
+                    studentExists = true;
+                    break;
+                }
+            }
+
+            if (!studentExists) {
+                cmbStudents.addItem(student);
+            }
+
+            boolean courseExists = false;
 
             for (int i = 0;
                  i < cmbCourses.getItemCount();
                  i++) {
 
-                Course current =
-                        cmbCourses.getItemAt(i);
+                if (cmbCourses.getItemAt(i)
+                        .getCourseCode()
+                        .equals(course.getCourseCode())) {
 
-                if (current.getCourseCode()
-                        .equals(
-                                previousSelection.getCourseCode()
-                        )) {
-
-                    cmbCourses.setSelectedIndex(i);
-
+                    courseExists = true;
                     break;
                 }
             }
+
+            if (!courseExists) {
+                cmbCourses.addItem(course);
+            }
+        }
+    }
+    
+    public void reloadData() {
+
+        loadData();
+
+        refreshTable();
+
+        revalidate();
+
+        repaint();
+    }
+
+    private Evaluation createEvaluation(String type, String name, double score, double percentage) {
+
+        switch (type) {
+            case "Examen":
+                return new WrittenExam(name, score, percentage);
+            case "Laboratorio":
+                return new Laboratory(name, score, percentage);
+            case "Proyecto":
+                return new ProjectEvaluation(name, score, percentage);
         }
 
-        refreshTable();
+        return null;
     }
 
-    
-    /**
-     * Recarga cursos en tiempo real.
-     */
-    public void reloadCourses() {
+    private void validateFields(String name, String score, String percentage) {
 
-        loadCourses();
-        
+        if (ValidationUtils.isEmpty(name)
+                || ValidationUtils.isEmpty(score)
+                || ValidationUtils.isEmpty(percentage)) {
+            throw new IllegalArgumentException("Campos obligatorios.");
+        }
 
-        refreshTable();
+        if (!ValidationUtils.isDouble(score)
+                || !ValidationUtils.isDouble(percentage)) {
+            throw new IllegalArgumentException("Valores inválidos.");
+        }
     }
 
+    private void clearFields() {
+        txtName.setText("");
+        txtScore.setText("");
+        txtPercentage.setText("");
+    }
+
+    private void loadSelectedEvaluation() {
+
+        int row = table.getSelectedRow();
+        if (row == -1) return;
+
+        txtName.setText(model.getValueAt(row, 2).toString());
+        txtScore.setText(model.getValueAt(row, 3).toString());
+        txtPercentage.setText(model.getValueAt(row, 4).toString());
+        cmbType.setSelectedItem(model.getValueAt(row, 1).toString());
+    }
 }

@@ -31,7 +31,7 @@ public class UIStyles {
      * Fuente principal.
      */
     public static final Font MAIN_FONT =
-            new Font("Segoe UI", Font.PLAIN, 14);
+            new Font("SansSerif", Font.BOLD, 15);
 
     /**
      * Fuente para títulos.

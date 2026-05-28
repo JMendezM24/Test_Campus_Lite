@@ -23,6 +23,8 @@ public class EnrollmentsPanel extends JPanel {
 
     private final EnrollmentManager enrollmentManager;
     
+    private Runnable onEnrollmentsChanged;
+
     private final EnrollmentCSVRepository repository;
 
     /**
@@ -45,7 +47,7 @@ public class EnrollmentsPanel extends JPanel {
         this.courseManager = courseManager;
 
         this.enrollmentManager = enrollmentManager;
-        
+
         repository =
                 new EnrollmentCSVRepository();
 
@@ -131,7 +133,7 @@ public class EnrollmentsPanel extends JPanel {
          * Botón.
          */
         ModernButton btnEnroll =
-                new ModernButton("Inscribir");
+                new ModernButton("📘 Inscribir");
 
         JPanel buttonPanel =
                 new JPanel();
@@ -195,8 +197,22 @@ public class EnrollmentsPanel extends JPanel {
                     (Course) cmbCourses
                             .getSelectedItem();
 
-            if (student == null
-                    || course == null) {
+            if (student == null) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Debe seleccionar un estudiante."
+                );
+
+                return;
+            }
+
+            if (course == null) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Debe seleccionar un curso."
+                );
 
                 return;
             }
@@ -205,7 +221,7 @@ public class EnrollmentsPanel extends JPanel {
                     student,
                     course
             );
-            
+
             repository.saveEnrollments(
                     enrollmentManager
                             .getEnrollments()
@@ -213,9 +229,18 @@ public class EnrollmentsPanel extends JPanel {
 
             refreshTable();
 
+            revalidate();
+
+            repaint();
+            
+            if (onEnrollmentsChanged != null) {
+
+                onEnrollmentsChanged.run();
+            }
+
             JOptionPane.showMessageDialog(
                     this,
-                    "Estudiante inscrito."
+                    "Estudiante inscrito correctamente."
             );
 
         } catch (Exception ex) {
@@ -242,7 +267,7 @@ public class EnrollmentsPanel extends JPanel {
 
             model.addRow(
                     new Object[]{
-                    		enrollment.getEnrollmentCode(),
+                            enrollment.getEnrollmentCode(),
 
                             enrollment.getStudent()
                                     .getFullInfo(),
@@ -252,6 +277,12 @@ public class EnrollmentsPanel extends JPanel {
                     }
             );
         }
+
+        model.fireTableDataChanged();
+
+        revalidate();
+
+        repaint();
     }
 
     /**
@@ -263,19 +294,29 @@ public class EnrollmentsPanel extends JPanel {
 
         cmbCourses.removeAllItems();
 
+        /**
+         * Cargar estudiantes.
+         */
         for (Student student :
                 studentManager.getStudents()) {
 
             cmbStudents.addItem(student);
         }
 
+        /**
+         * Cargar cursos.
+         */
         for (Course course :
                 courseManager.getCourses()) {
 
             cmbCourses.addItem(course);
         }
+
+        revalidate();
+
+        repaint();
     }
-    
+
     /**
      * Recarga datos en tiempo real.
      */
@@ -284,9 +325,20 @@ public class EnrollmentsPanel extends JPanel {
         loadData();
 
         refreshTable();
-        
+
         revalidate();
 
         repaint();
+    }
+    
+    /**
+     * Evento cuando cambian inscripciones.
+     */
+    public void setOnEnrollmentsChanged(
+            Runnable onEnrollmentsChanged
+    ) {
+
+        this.onEnrollmentsChanged =
+                onEnrollmentsChanged;
     }
 }

@@ -22,7 +22,7 @@ public class ModernButton extends JButton {
 
         setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        setPreferredSize(new Dimension(140, 40));
+        setPreferredSize(new Dimension(180, 42));
     }
 
 }

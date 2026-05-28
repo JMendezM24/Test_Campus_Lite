@@ -1,9 +1,11 @@
 package com.campuslite.ui;
 
 import com.campuslite.domain.Student;
+import com.campuslite.logic.EnrollmentManager;
 import com.campuslite.logic.StudentManager;
 import com.campuslite.logic.ValidationUtils;
 import com.campuslite.persistence.StudentCSVRepository;
+import com.campuslite.persistence.EnrollmentCSVRepository;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -15,8 +17,11 @@ import java.awt.*;
 public class StudentsPanel extends JPanel {
 
     private final StudentManager studentManager;
+    private final EnrollmentManager enrollmentManager;
 
     private final StudentCSVRepository repository;
+    private final EnrollmentCSVRepository
+    enrollmentRepository;
     private Runnable onStudentsChanged;
 
     /**
@@ -29,11 +34,17 @@ public class StudentsPanel extends JPanel {
     private ModernTable table;
     private DefaultTableModel model;
 
-    public StudentsPanel(StudentManager studentManager) {
+    public StudentsPanel(
+            StudentManager studentManager,
+            EnrollmentManager enrollmentManager
+    ) {
 
         this.studentManager = studentManager;
+        this.enrollmentManager = enrollmentManager;
 
         repository = new StudentCSVRepository();
+        enrollmentRepository =
+                new EnrollmentCSVRepository();
 
         initialize();
 
@@ -125,13 +136,13 @@ public class StudentsPanel extends JPanel {
         );
 
         ModernButton btnAdd =
-                new ModernButton("Agregar");
+                new ModernButton("➕ Agregar");
 
         ModernButton btnUpdate =
-                new ModernButton("Actualizar");
+                new ModernButton("🔄 Actualizar");
 
         ModernButton btnDelete =
-                new ModernButton("Eliminar");
+                new ModernButton("❌ Eliminar");
 
         buttonPanel.add(btnAdd);
 
@@ -139,7 +150,17 @@ public class StudentsPanel extends JPanel {
 
         buttonPanel.add(btnDelete);
 
-        gbc.gridx = 3;
+        /**
+         * =========================
+         * FILA 3 BOTONES
+         * =========================
+         */
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+
+        gbc.gridwidth = 3;
+
+        gbc.anchor = GridBagConstraints.CENTER;
 
         topPanel.add(buttonPanel, gbc);
 
@@ -268,8 +289,16 @@ public class StudentsPanel extends JPanel {
 
         String code =
                 model.getValueAt(row, 0).toString();
+        
+        enrollmentManager.removeEnrollmentsByStudent(
+                code
+        );
 
         studentManager.removeStudent(code);
+        
+        enrollmentRepository.saveEnrollments(
+                enrollmentManager.getEnrollments()
+        );
 
         repository.saveStudents(
                 studentManager.getStudents()
@@ -312,11 +341,17 @@ public class StudentsPanel extends JPanel {
             String originalCode =
                     model.getValueAt(row, 0).toString();
 
+            String newCode = originalCode;            
+            String firstName = txtFirstName.getText();
+            String lastName = txtLastName.getText();
+
+            validateFields(newCode, firstName, lastName);
+
             Student updatedStudent =
                     new Student(
-                            originalCode,
-                            txtFirstName.getText(),
-                            txtLastName.getText()
+                            newCode,
+                            firstName,
+                            lastName
                     );
 
             studentManager.updateStudent(
@@ -329,9 +364,8 @@ public class StudentsPanel extends JPanel {
             );
 
             refreshTable();
-            
-            if (onStudentsChanged != null) {
 
+            if (onStudentsChanged != null) {
                 onStudentsChanged.run();
             }
 
@@ -361,6 +395,8 @@ public class StudentsPanel extends JPanel {
         int row = table.getSelectedRow();
 
         if (row != -1) {
+        	
+        	txtCode.setEditable(false);
 
             txtCode.setText(
                     model.getValueAt(row, 0).toString()
@@ -416,6 +452,12 @@ public class StudentsPanel extends JPanel {
         txtFirstName.setText("");
 
         txtLastName.setText("");
+        
+        /**
+         * Volver a habilitar carnet
+         * para nuevos registros.
+         */
+        txtCode.setEditable(true);
     }
 
     /**

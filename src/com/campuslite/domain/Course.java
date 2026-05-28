@@ -1,8 +1,5 @@
 package com.campuslite.domain;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Clase Course.
  */
@@ -14,13 +11,9 @@ public class Course {
     private int capacity;
 
     /**
-     * Lista de evaluaciones asociadas al curso.
+     * Constructor vacío.
      */
-    private List<Evaluation> evaluations;
-
     public Course() {
-
-        evaluations = new ArrayList<>();
     }
 
     /**
@@ -30,8 +23,6 @@ public class Course {
                   String name,
                   int credits,
                   int capacity) {
-
-        this();
 
         setCourseCode(courseCode);
         setName(name);
@@ -46,10 +37,13 @@ public class Course {
     public void setCourseCode(String courseCode) {
 
         if (courseCode == null || courseCode.trim().isEmpty()) {
-            throw new IllegalArgumentException("El código del curso es obligatorio.");
+            throw new IllegalArgumentException(
+                    "El código del curso es obligatorio."
+            );
         }
 
-        this.courseCode = courseCode.trim().toUpperCase();
+        this.courseCode =
+                courseCode.trim().toUpperCase();
     }
 
     public String getName() {
@@ -59,7 +53,10 @@ public class Course {
     public void setName(String name) {
 
         if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre del curso es obligatorio.");
+
+            throw new IllegalArgumentException(
+                    "El nombre del curso es obligatorio."
+            );
         }
 
         this.name = name.trim();
@@ -72,7 +69,10 @@ public class Course {
     public void setCredits(int credits) {
 
         if (credits < 0) {
-            throw new IllegalArgumentException("Los créditos no pueden ser negativos.");
+
+            throw new IllegalArgumentException(
+                    "Los créditos no pueden ser negativos."
+            );
         }
 
         this.credits = credits;
@@ -85,57 +85,13 @@ public class Course {
     public void setCapacity(int capacity) {
 
         if (capacity <= 0) {
-            throw new IllegalArgumentException("El cupo debe ser mayor que cero.");
+
+            throw new IllegalArgumentException(
+                    "El cupo debe ser mayor que cero."
+            );
         }
 
         this.capacity = capacity;
-    }
-
-    public List<Evaluation> getEvaluations() {
-        return evaluations;
-    }
-
-    /**
-     * Agrega una evaluación al curso.
-     */
-    public void addEvaluation(Evaluation evaluation) {
-
-        if (evaluation == null) {
-            throw new IllegalArgumentException("La evaluación no puede ser nula.");
-        }
-
-        evaluations.add(evaluation);
-    }
-
-    /**
-     * Calcula el porcentaje total acumulado.
-     */
-    public double getTotalPercentage() {
-
-        double total = 0;
-
-        for (Evaluation evaluation : evaluations) {
-            total += evaluation.getPercentage();
-        }
-
-        return total;
-    }
-    
-    /**
-     * Calcula promedio final del curso.
-     */
-    public double calculateCourseAverage() {
-
-        double total = 0;
-
-        for (Evaluation evaluation :
-                evaluations) {
-
-            total +=
-                    evaluation.calculateContribution();
-        }
-
-        return total;
     }
 
     @Override
@@ -143,5 +99,4 @@ public class Course {
 
         return courseCode + " - " + name;
     }
-
 }

@@ -1,8 +1,2 @@
-courseCode,type,name,score,percentage
-001,Examen,Final,98.0,40.0
-001,Laboratorio,Lab,87.0,30.0
-001,Proyecto,Proyect1,78.0,30.0
-002,Examen,Final,98.0,40.0
-002,Laboratorio,Lab,67.0,30.0
-002,Proyecto,Proyec,61.0,30.0
-003,Examen,Final,98.0,40.0
+studentCode,courseCode,type,name,score,percentage
+001,CA1,Examen,Final,68.0,30.0

@@ -1,6 +1,6 @@
 package com.campuslite.logic;
 
-import com.campuslite.domain.Course;
+import com.campuslite.domain.Enrollment;
 import com.campuslite.domain.Evaluation;
 
 import java.util.List;
@@ -11,47 +11,65 @@ import java.util.List;
 public class EvaluationManager {
 
     /**
-     * Agrega evaluación a un curso.
+     * Agrega evaluación a inscripción.
      */
-    public void addEvaluationToCourse(Course course,
-                                      Evaluation evaluation) {
+    public void addEvaluationToEnrollment(
+            Enrollment enrollment,
+            Evaluation evaluation
+    ) {
 
-        validatePercentage(course, evaluation);
+        validatePercentage(
+                enrollment,
+                evaluation
+        );
 
-        course.addEvaluation(evaluation);
+        enrollment.addEvaluation(evaluation);
     }
 
     /**
      * Elimina evaluación.
      */
-    public void removeEvaluation(Course course,
-                                 Evaluation evaluation) {
+    public void removeEvaluation(
+            Enrollment enrollment,
+            Evaluation evaluation
+    ) {
 
-        course.getEvaluations().remove(evaluation);
+        enrollment.removeEvaluation(evaluation);
     }
 
     /**
      * Obtiene evaluaciones.
      */
-    public List<Evaluation> getEvaluations(Course course) {
+    public List<Evaluation> getEvaluations(
+            Enrollment enrollment
+    ) {
 
-        return course.getEvaluations();
+        return enrollment.getEvaluations();
     }
 
     /**
-     * Valida que el porcentaje total no supere 100.
+     * Valida porcentaje total.
      */
-    private void validatePercentage(Course course,
-                                    Evaluation evaluation) {
+    private void validatePercentage(
+            Enrollment enrollment,
+            Evaluation evaluation
+    ) {
 
-        double total = course.getTotalPercentage()
-                + evaluation.getPercentage();
+        double total = 0;
+
+        for (Evaluation current :
+                enrollment.getEvaluations()) {
+
+            total += current.getPercentage();
+        }
+
+        total += evaluation.getPercentage();
 
         if (total > 100) {
+
             throw new IllegalArgumentException(
                     "La suma de porcentajes no puede superar 100%."
             );
         }
     }
-
 }

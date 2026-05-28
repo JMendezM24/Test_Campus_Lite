@@ -68,16 +68,19 @@ public class Main {
             );
 
             /**
-             * Carga evaluaciones.
+             * Carga inscripciones.
              */
-            evaluationRepository.loadEvaluations(
-                    courseManager.getCourses()
-            );
-            
             enrollmentRepository.loadEnrollments(
                     enrollmentManager,
                     studentManager.getStudents(),
                     courseManager.getCourses()
+            );
+
+            /**
+             * Carga evaluaciones.
+             */
+            evaluationRepository.loadEvaluations(
+                    enrollmentManager.getEnrollments()
             );
 
             /**

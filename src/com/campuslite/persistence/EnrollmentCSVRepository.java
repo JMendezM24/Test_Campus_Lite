@@ -84,14 +84,22 @@ public class EnrollmentCSVRepository {
 
             while ((line = br.readLine()) != null) {
 
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+
                 String[] data =
                         line.split(",");
 
+                if (data.length < 2) {
+                    continue;
+                }
+
                 String studentCode =
-                        data[0];
+                        data[0].trim();
 
                 String courseCode =
-                        data[1];
+                        data[1].trim();
 
                 Student student =
                         findStudent(
@@ -108,11 +116,21 @@ public class EnrollmentCSVRepository {
                 if (student != null
                         && course != null) {
 
-                    enrollmentManager
-                            .enrollStudent(
+                    /**
+                     * Evita duplicados.
+                     */
+                    if (!enrollmentManager
+                            .isStudentEnrolled(
                                     student,
                                     course
-                            );
+                            )) {
+
+                        enrollmentManager
+                                .enrollStudent(
+                                        student,
+                                        course
+                                );
+                    }
                 }
             }
 
